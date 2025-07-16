@@ -1,4 +1,5 @@
 {
+  "main": "./dist/extension.js",
   "name": "readme-generator",
   "displayName": "readme-generator",
   "description": "Automatically generate a detailed README.md from project folder structure",
