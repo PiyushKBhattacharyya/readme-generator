@@ -42,6 +42,23 @@ export function detectTechStack(root: string): string[] {
     if (pkg.includes('"express"')) {stack.add('Express.js');}
     if (pkg.includes('"nestjs"')) {stack.add('NestJS');}
     if (pkg.includes('"typescript"')) {stack.add('TypeScript');}
+    if (pkg.includes('"angular"') || allFiles.some(f => f.endsWith('angular.json'))) {stack.add('Angular');}
+    if (pkg.includes('"vue"') || allFiles.some(f => f.endsWith('vue.config.js'))) {stack.add('Vue.js');}
+    if (pkg.includes('"svelte"') || allFiles.some(f => f.endsWith('svelte.config.js'))) {stack.add('Svelte');}
+    if (pkg.includes('"electron"') || allFiles.some(f => f.endsWith('electron.js') || f.endsWith('main.js'))) {stack.add('Electron');}
+    if (pkg.includes('"storybook"')) {stack.add('Storybook');}
+    if (pkg.includes('"graphql"')) {stack.add('GraphQL');}
+    if (pkg.includes('"mongodb"')) {stack.add('MongoDB');}
+    if (pkg.includes('"sequelize"') || pkg.includes('"typeorm"')) {stack.add('ORM');}
+    if (pkg.includes('"jest"') || pkg.includes('"mocha"')) {stack.add('Testing Framework');}
+    if (pkg.includes('"eslint"')) {stack.add('ESLint');}
+    if (pkg.includes('"prettier"')) {stack.add('Prettier');}
+    if (pkg.includes('"webpack"')) {stack.add('Webpack');}
+    if (pkg.includes('"gulp"')) {stack.add('Gulp');}
+    if (pkg.includes('"babel"')) {stack.add('Babel');}
+    if (pkg.includes('"socket.io"')) {stack.add('WebSockets');}
+    if (pkg.includes('"passport"')) {stack.add('Authentication');}
+    if (pkg.includes('"dotenv"')) {stack.add('Environment Variables');}
 
     // Python frameworks
     const reqs = tryReadFile('requirements.txt');

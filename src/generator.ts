@@ -36,6 +36,59 @@ function getTestInstructions(root: string, techStack: string[]): string {
     return 'Add your test instructions here.';
 }
 
+function detectFeatures(root: string): string[] {
+    const features: string[] = [];
+    const keywords = [
+        { key: 'auth', label: 'Authentication' },
+        { key: 'login', label: 'Login System' },
+        { key: 'register', label: 'Registration' },
+        { key: 'api', label: 'API Endpoints' },
+        { key: 'database', label: 'Database Integration' },
+        { key: 'graphql', label: 'GraphQL Support' },
+        { key: 'websocket', label: 'WebSocket Support' },
+        { key: 'cache', label: 'Caching' },
+        { key: 'test', label: 'Testing' },
+        { key: 'i18n', label: 'Internationalization' },
+        { key: 'docker', label: 'Docker Support' },
+        { key: 'ci', label: 'CI/CD Integration' }
+    ];
+
+    function scanFile(filePath: string) {
+        try {
+            const content = fs.readFileSync(filePath, 'utf8').toLowerCase();
+            for (const { key, label } of keywords) {
+                const regex = new RegExp(`\\b${key}\\b`, 'i');
+                if (regex.test(content) && !features.includes(label)) {
+                    features.push(label);
+                }
+            }
+        } catch { /* ignore errors */ }
+    }
+
+    function walk(dir: string) {
+        const files = fs.readdirSync(dir);
+        for (const file of files) {
+            const fullPath = path.join(dir, file);
+            if (fs.statSync(fullPath).isDirectory()) {
+                walk(fullPath);
+            } else if (fullPath.endsWith('.js') || fullPath.endsWith('.ts') || fullPath.endsWith('.py')) {
+                scanFile(fullPath);
+            }
+        }
+    }
+
+    // Only scan src, lib, or main folders if they exist
+    const scanFolders = ['src', 'lib', 'main'].filter(folder => fs.existsSync(path.join(root, folder)));
+    if (scanFolders.length > 0) {
+        scanFolders.forEach(folder => walk(path.join(root, folder)));
+    } else {
+        // Fallback: scan root only if no main source folders
+        walk(root);
+    }
+
+    return features;
+}
+
 function getDependencies(root: string, techStack: string[]): string[] {
     const deps: string[] = [];
     if (fs.existsSync(path.join(root, 'package.json'))) {
@@ -76,11 +129,24 @@ function getSetupSection(techStack: string[], dependencies: string[], root: stri
 }
 
 function detectProjectType(files: string[], root: string): string {
-    // VS Code Extension: package.json with "vscode" engine or "extension.ts"
     const pkgPath = path.join(root, 'package.json');
     if (fs.existsSync(pkgPath)) {
         const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
-        if (pkg.engines && pkg.engines.vscode) {return 'VS Code Extension';}
+        // VS Code Extension
+        if (pkg.engines && pkg.engines.vscode) {
+            let extDetails = 'VS Code Extension';
+            if (pkg.contributes) {
+                const contributes = [];
+                if (pkg.contributes.commands) {contributes.push('Commands');}
+                if (pkg.contributes.menus) {contributes.push('Menus');}
+                if (pkg.contributes.keybindings) {contributes.push('Keybindings');}
+                if (pkg.contributes.configuration) {contributes.push('Settings');}
+                if (contributes.length)
+                    {extDetails += ` (Contributes: ${contributes.join(', ')})`;}
+            }
+            return extDetails;
+        }
+        // Node/JS Frameworks
         if (pkg.dependencies) {
             if (pkg.dependencies.react || pkg.dependencies['react-dom']) {return 'React Web Application';}
             if (pkg.dependencies['next']) {return 'Next.js Web Application';}
@@ -91,9 +157,20 @@ function detectProjectType(files: string[], root: string): string {
         if (pkg.main && pkg.main.endsWith('.js')) {return 'Node.js Application';}
         if (pkg.bin) {return 'Command Line Tool';}
     }
+    // Build tools
+    if (fs.existsSync(path.join(root, 'tsconfig.json'))) {return 'TypeScript Project';}
+    if (fs.existsSync(path.join(root, 'webpack.config.js'))) {return 'Webpack Project';}
+    if (fs.existsSync(path.join(root, 'gulpfile.js'))) {return 'Gulp Project';}
+    // Docker
+    if (fs.existsSync(path.join(root, 'Dockerfile'))) {return 'Dockerized Project';}
+    // CI/CD
+    if (fs.existsSync(path.join(root, '.github')) && fs.existsSync(path.join(root, '.github', 'workflows'))) {return 'Project with GitHub Actions/CI';}
+    // Folder structure analysis
+    if (files.includes('public')) {return 'Web Application (public folder detected)';}
+    if (files.includes('src') && files.includes('test')) {return 'Library/Package (src & test folders)';}
+    if (files.includes('docs')) {return 'Documented Project (docs folder)';}
     // VS Code Workspace
     if (files.includes('.vscode') || fs.existsSync(path.join(root, '.vscode'))) {
-        // Check for launch.json or tasks.json for extension/workspace
         const vscodeFiles = fs.readdirSync(path.join(root, '.vscode'));
         if (vscodeFiles.includes('launch.json')) {return 'VS Code Workspace/Project';}
         if (vscodeFiles.includes('tasks.json')) {return 'VS Code Workspace/Project';}
@@ -101,13 +178,11 @@ function detectProjectType(files: string[], root: string): string {
     // Python
     if (files.includes('requirements.txt') || files.includes('main.py')) {return 'Python Application';}
     // Web
-    if (files.includes('app.html') || files.includes('index.html') || files.includes('public')) {return 'Web Application';}
+    if (files.includes('app.html') || files.includes('index.html')) {return 'Web Application';}
     // Node
     if (files.includes('server.js') || files.includes('app.js')) {return 'Node.js Application';}
     // CLI
     if (files.includes('cli.js')) {return 'Command Line Tool';}
-    // Library
-    if (files.includes('src') && files.includes('tests')) {return 'Library/Package';}
     return 'Unknown';
 }
 
@@ -138,6 +213,7 @@ export function generateSmartReadme(
     const dependencies = getDependencies(root, techStack);
     const mainEntry = getMainEntry(root, techStack, files);
     const runCommand = detectRunCommandFromTechStack(techStack, projectType, files);
+    const features = detectFeatures(root);
 
     // .gitignore section
     const gitignorePath = path.join(root, '.gitignore');
@@ -169,6 +245,7 @@ export function generateSmartReadme(
         `## 📦 Technologies`,
         techStack.length ? techStack.map(t => `- ${t}`).join('\n') : '- Could not detect tech stack - Manually add technologies here.',
         '',
+        features.length ? `## ✨ Features\n${features.map(f => `- ${f}`).join('\n')}\n` : '',
         `## 📂 Main Entry Point`,
         `\`${mainEntry}\``,
         '',
