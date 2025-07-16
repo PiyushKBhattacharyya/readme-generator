@@ -16,12 +16,13 @@ export function activate(context: vscode.ExtensionContext) {
         }
 
         const root = folders[0].uri.fsPath;
+        const projectName = path.basename(root);
         const gitignore = loadGitIgnore(root);
         const projectType = detectProjectType(root);
         const techStack = detectTechStack(root);
 
         const inCodespaces = !!process.env.CODESPACES;
-        const markdown = generateSmartReadme(projectType, techStack, inCodespaces);
+        const markdown = generateSmartReadme(projectName, projectType, techStack, inCodespaces, root);   
 
         const filePath = path.join(root, 'README.md');
         fs.writeFileSync(filePath, markdown);
