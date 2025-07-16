@@ -9,13 +9,14 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
-  "main": "./out/extension.js",
+  "activationEvents": [
+    "onCommand:extension.generateReadme"
+  ],
   "contributes": {
     "commands": [
       {
-        "command": "readme-generator.helloWorld",
-        "title": "Hello World"
+        "command": "extension.generateReadme",
+        "title": "Generate README from Subdirectories"
       }
     ]
   },
