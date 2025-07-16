@@ -1,14 +1,49 @@
-export function generateMarkdown(data: any[]): string {
-    const lines: string[] = ['# 📁 Project Structure'];
+export function generateSmartReadme(projectType: string, includeCodespaces: boolean): string {
+    const lines: string[] = [];
 
-    for (const item of data) {
-        const indent = '  '.repeat(item.depth);
-        const icon = item.isDirectory ? '📂' : '📄';
-        lines.push(`${indent}- ${icon} \`${item.path}\``);
+    lines.push(`# 🚀 Project Title`);
+    lines.push(`A brief description of your ${projectType} project.\n`);
+
+    lines.push(`## 🧠 Project Type`);
+    lines.push(`> This project appears to be a **${projectType}**\n`);
+
+    lines.push(`## 📦 Technologies`);
+    lines.push(`- Detected automatically`);
+    lines.push(`- Based on file structure and config\n`);
+
+    lines.push(`## ⚙️ Setup`);
+    lines.push(`\`\`\`bash`);
+    lines.push(`git clone <repo-url>`);
+    if (projectType.includes('Node')) {
+        lines.push(`cd <project-folder>`);
+        lines.push(`npm install`);
+    } else if (projectType.includes('.NET')) {
+        lines.push(`dotnet restore`);
+    }
+    lines.push(`\`\`\`\n`);
+
+    lines.push(`## 🏃 Run`);
+    lines.push(`\`\`\`bash`);
+    if (projectType.includes('React')) {
+        lines.push(`npm start`);
+    } else if (projectType.includes('API')) {
+        lines.push(`npm run dev`);
+    } else if (projectType.includes('.NET')) {
+        lines.push(`dotnet run`);
+    } else {
+        lines.push(`# Replace this with your run command`);
+    }
+    lines.push(`\`\`\`\n`);
+
+    if (includeCodespaces) {
+        lines.push(`## 💻 Codespaces`);
+        lines.push(`This project supports GitHub Codespaces!`);
+        lines.push(`- Just open in Codespaces and it will auto-install dependencies.`);
+        lines.push(`- Customize devcontainer if needed.\n`);
     }
 
-    lines.push('\n---\n');
-    lines.push('> This README was generated automatically using the VS Code Extension.');
+    lines.push(`## 📄 License`);
+    lines.push(`This project is licensed under the MIT License - see the LICENSE file for details.`);
 
     return lines.join('\n');
 }

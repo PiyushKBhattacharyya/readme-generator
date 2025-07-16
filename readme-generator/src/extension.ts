@@ -1,32 +1,32 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
-import { scanDirectory } from './scanner';
-import { generateMarkdown } from './generator';
+
+import { loadGitIgnore } from './gitignore-utils';
+import { detectProjectType } from './project-analyzer';
+import { generateSmartReadme } from './generator';
 
 export function activate(context: vscode.ExtensionContext) {
-    let disposable = vscode.commands.registerCommand('extension.generateReadme', () => {
-        const workspaceFolders = vscode.workspace.workspaceFolders;
-
-        if (!workspaceFolders) {
-            vscode.window.showErrorMessage('Open a folder first');
+    const disposable = vscode.commands.registerCommand('extension.generateReadme', async () => {
+        const folders = vscode.workspace.workspaceFolders;
+        if (!folders) {
+            vscode.window.showErrorMessage('No folder open');
             return;
         }
 
-        const rootPath = workspaceFolders[0].uri.fsPath;
-        const data = scanDirectory(rootPath);
-        const markdown = generateMarkdown(data);
+        const root = folders[0].uri.fsPath;
+        const gitignore = loadGitIgnore(root);
+        const projectType = detectProjectType(root);
 
-        const readmePath = path.join(rootPath, 'README.md');
-        fs.writeFileSync(readmePath, markdown, 'utf-8');
+        const inCodespaces = !!process.env.CODESPACES;
+        const markdown = generateSmartReadme(projectType, inCodespaces);
 
-        vscode.window.showInformationMessage('README.md generated!');
-        vscode.workspace.openTextDocument(readmePath).then(doc => {
-            vscode.window.showTextDocument(doc);
-        });
+        const filePath = path.join(root, 'README.md');
+        fs.writeFileSync(filePath, markdown);
+
+        const doc = await vscode.workspace.openTextDocument(filePath);
+        vscode.window.showTextDocument(doc);
     });
 
     context.subscriptions.push(disposable);
 }
-
-export function deactivate() {}
