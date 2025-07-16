@@ -1,4 +1,8 @@
-export function generateSmartReadme(projectType: string, includeCodespaces: boolean): string {
+export function generateSmartReadme(
+  projectType: string,
+  techStack: string[],
+  includeCodespaces: boolean
+): string {
     const lines: string[] = [];
 
     lines.push(`# 🚀 Project Title`);
@@ -8,8 +12,13 @@ export function generateSmartReadme(projectType: string, includeCodespaces: bool
     lines.push(`> This project appears to be a **${projectType}**\n`);
 
     lines.push(`## 📦 Technologies`);
-    lines.push(`- Detected automatically`);
-    lines.push(`- Based on file structure and config\n`);
+    if (techStack.length > 0) {
+        for (const tech of techStack) {
+            lines.push(`- ${tech}`);
+        }
+    } else {
+        lines.push(`- Could not detect tech stack - Manually add technologies here.`);
+    }
 
     lines.push(`## ⚙️ Setup`);
     lines.push(`\`\`\`bash`);

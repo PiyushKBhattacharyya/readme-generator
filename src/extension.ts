@@ -5,6 +5,7 @@ import * as fs from 'fs';
 import { loadGitIgnore } from './gitignore-utils';
 import { detectProjectType } from './project-analyzer';
 import { generateSmartReadme } from './generator';
+import { detectTechStack } from './tech-stack-detector';
 
 export function activate(context: vscode.ExtensionContext) {
     const disposable = vscode.commands.registerCommand('extension.generateReadme', async () => {
@@ -17,9 +18,10 @@ export function activate(context: vscode.ExtensionContext) {
         const root = folders[0].uri.fsPath;
         const gitignore = loadGitIgnore(root);
         const projectType = detectProjectType(root);
+        const techStack = detectTechStack(root);
 
         const inCodespaces = !!process.env.CODESPACES;
-        const markdown = generateSmartReadme(projectType, inCodespaces);
+        const markdown = generateSmartReadme(projectType, techStack, inCodespaces);
 
         const filePath = path.join(root, 'README.md');
         fs.writeFileSync(filePath, markdown);
